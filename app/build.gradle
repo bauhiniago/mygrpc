@@ -1,0 +1,136 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.xuexiang.xaop' //引用xaop插件
+apply plugin: 'com.google.protobuf'
+android {
+    compileSdkVersion build_versions.target_sdk
+    buildToolsVersion build_versions.build_tools
+    defaultConfig {
+        applicationId "com.example.facedetect_remote"
+        minSdkVersion 19
+        targetSdkVersion build_versions.target_sdk
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11"
+            }
+        }
+    }
+
+
+    if (isNeedPackage.toBoolean()) {
+        signingConfigs {
+            release {
+                storeFile file(app_release.storeFile)
+                storePassword app_release.storePassword
+                keyAlias app_release.keyAlias
+                keyPassword app_release.keyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            if (isNeedPackage.toBoolean()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.11.3"
+        }
+    }
+
+
+
+    if (isNeedPackage.toBoolean()) {
+        applicationVariants.all { variant ->
+            variant.outputs.all {
+                if (variant.buildType.name.equals('release')) {
+                    outputFileName = "protobufdemo_${defaultConfig.versionName}.apk"
+                }
+            }
+        }
+    }
+
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        abortOnError false
+        disable 'GoogleAppIndexingWarning', 'HardcodedText', 'InvalidPackage'
+        textReport true
+        textOutput "stdout"
+    }
+
+
+
+}
+protobuf {
+    protoc { artifact = 'com.google.protobuf:protoc:3.6.1' }
+    plugins {
+        javalite { artifact = "com.google.protobuf:protoc-gen-javalite:3.0.0" }
+        grpc { artifact = 'io.grpc:protoc-gen-grpc-java:1.19.0' // CURRENT_GRPC_VERSION
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                javalite {}
+                grpc { // Options added to --grpc_out
+                    option 'lite' }
+            }
+        }
+    }
+}
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.support.app_compat
+    testImplementation deps.junit
+    androidTestImplementation deps.runner
+    androidTestImplementation deps.espresso.core
+
+    //protobuf
+    implementation 'io.grpc:grpc-okhttp:1.21.0'
+    implementation 'io.grpc:grpc-protobuf-lite:1.19.0'
+    implementation 'io.grpc:grpc-stub:1.19.0'
+    implementation 'javax.annotation:javax.annotation-api:1.2'
+    annotationProcessor 'androidx.annotation:annotation:1.0.0'
+
+    //工具类
+    implementation 'com.github.xuexiangjys.XUtil:xutil-core:1.1.5'
+    //切片
+    implementation 'com.github.xuexiangjys.XAOP:xaop-runtime:1.0.1'  //添加依赖
+
+    //XPage
+    implementation 'com.github.xuexiangjys.XPage:xpage-lib:2.2.4'
+    annotationProcessor 'com.github.xuexiangjys.XPage:xpage-compiler:2.2.4'
+    //ButterKnife的sdk
+    implementation deps.butterknife.runtime
+    annotationProcessor deps.butterknife.compiler
+    //如果开启了内存泄漏监测leak,就需要加上这个依赖
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.3'
+    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.3'
+    testImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.3'
+
+    implementation 'com.qianwen:okhttp-utils:3.8.0'
+
+//    implementation 'com.android.support:support-v4:24.2.0'
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+
+
+
+
+}
